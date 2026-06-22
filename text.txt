@@ -23,3 +23,11 @@ try {
 } finally {
     Remove-Item Env:NODE_TLS_REJECT_UNAUTHORIZED -ErrorAction SilentlyContinue
 }
+
+
+console.error(JSON.stringify({
+  message: error.message,
+  status: error.status,
+  url: error.url,
+  details: error.details
+}, null, 2));
