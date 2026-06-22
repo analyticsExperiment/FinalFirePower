@@ -25,6 +25,8 @@ try {
 }
 
 
+console.error(error.message || error);
+
 console.error(JSON.stringify({
   message: error.message,
   status: error.status,
