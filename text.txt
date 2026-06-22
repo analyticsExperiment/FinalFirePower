@@ -5,3 +5,21 @@ try {
 } finally {
     Remove-Item Env:NODE_TLS_REJECT_UNAUTHORIZED -ErrorAction SilentlyContinue
 }
+
+
+
+$run = Get-ChildItem .\aep-ajo-inventory-output -Directory |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1
+
+Get-Content "$($run.FullName)\reports\errors.json" -Raw
+
+
+
+$env:NODE_TLS_REJECT_UNAUTHORIZED="0"
+
+try {
+    npm run inventory:aep-ajo -- --scope ajo --sandbox prod
+} finally {
+    Remove-Item Env:NODE_TLS_REJECT_UNAUTHORIZED -ErrorAction SilentlyContinue
+}
