@@ -110,6 +110,50 @@ export const AJO_JOURNEY_NODES_COLUMNS = [
   "raw_journey_file"
 ];
 
+export const AEP_SOURCE_CATALOG_COLUMNS = [
+  "connection_spec_id",
+  "source_name",
+  "source_description",
+  "source_category",
+  "source_type",
+  "provider_id",
+  "spec_version",
+  "is_source",
+  "authentication_types",
+  "documentation_url",
+  "icon_name",
+  "is_beta",
+  "is_deprecated",
+  "configured_base_connection_count",
+  "configured_source_connection_count",
+  "configured_dataflow_count",
+  "enabled_dataflow_count",
+  "raw_connection_spec_file"
+];
+
+export const AEP_DESTINATION_CATALOG_COLUMNS = [
+  "connection_spec_id",
+  "destination_name",
+  "destination_description",
+  "destination_category",
+  "destination_type",
+  "provider_id",
+  "spec_version",
+  "is_destination",
+  "authentication_types",
+  "delivery_type",
+  "supported_data_types",
+  "supported_frequencies",
+  "documentation_url",
+  "icon_name",
+  "is_beta",
+  "is_deprecated",
+  "configured_base_connection_count",
+  "configured_target_connection_count",
+  "configured_dataflow_count",
+  "enabled_dataflow_count",
+  "raw_connection_spec_file"
+];
 export const AEP_SOURCES_LIST_COLUMNS = [
   "source_id",
   "source_name",
@@ -206,8 +250,10 @@ export const AEP_AJO_CSV_FILES = [
   { fileName: "ajo_journeys_list.csv", columns: AJO_JOURNEYS_LIST_COLUMNS },
   { fileName: "ajo_journey_details_inventory.csv", columns: AJO_JOURNEY_DETAILS_COLUMNS },
   { fileName: "ajo_journey_nodes_inventory.csv", columns: AJO_JOURNEY_NODES_COLUMNS },
+  { fileName: "aep_source_catalog.csv", columns: AEP_SOURCE_CATALOG_COLUMNS },
   { fileName: "aep_sources_list.csv", columns: AEP_SOURCES_LIST_COLUMNS },
   { fileName: "aep_source_dataflows_inventory.csv", columns: AEP_SOURCE_DATAFLOWS_COLUMNS },
+  { fileName: "aep_destination_catalog.csv", columns: AEP_DESTINATION_CATALOG_COLUMNS },
   { fileName: "aep_destinations_list.csv", columns: AEP_DESTINATIONS_LIST_COLUMNS },
   { fileName: "aep_destination_dataflows_inventory.csv", columns: AEP_DESTINATION_DATAFLOWS_COLUMNS }
 ];
@@ -289,8 +335,10 @@ export async function runAepAjoInventory(config = loadAepAjoInventoryConfig(), d
     "ajo_journeys_list.csv": includeAjo ? buildAjoJourneysListRows(state.ajo.journeys) : [],
     "ajo_journey_details_inventory.csv": includeAjo ? buildAjoJourneyDetailsRows(state.ajo.journeys) : [],
     "ajo_journey_nodes_inventory.csv": includeAjo ? buildAjoJourneyNodeRows(state.ajo.journeys) : [],
+    "aep_source_catalog.csv": includeAepSources ? buildAepSourceCatalogRows(state.aep) : [],
     "aep_sources_list.csv": includeAepSources ? buildAepSourcesListRows(state.aep) : [],
     "aep_source_dataflows_inventory.csv": includeAepSources ? buildAepSourceDataflowRows(state.aep) : [],
+    "aep_destination_catalog.csv": includeAepDestinations ? buildAepDestinationCatalogRows(state.aep) : [],
     "aep_destinations_list.csv": includeAepDestinations ? buildAepDestinationsListRows(state.aep) : [],
     "aep_destination_dataflows_inventory.csv": includeAepDestinations ? buildAepDestinationDataflowRows(state.aep) : []
   };
@@ -437,13 +485,98 @@ export function buildAjoJourneyNodeRows(journeys = []) {
   return rows;
 }
 
+export function buildAepSourceCatalogRows({ connectionSpecs = [], connections = [], sourceConnections = [], flows = [] } = {}) {
+  const context = buildAepContext({ connectionSpecs, connections, sourceConnections });
+  return toArray(connectionSpecs)
+    .filter(isSourceConnectionSpec)
+    .map((spec) => {
+      const specId = normalizeId(spec.id);
+      const baseConnections = toArray(connections).filter((connection) => normalizeId(getConnectionSpecId(connection)) === specId);
+      const baseConnectionIds = new Set(baseConnections.map((connection) => normalizeId(connection.id)).filter(Boolean));
+      const configuredSourceConnections = toArray(sourceConnections).filter((connection) =>
+        normalizeId(getConnectionSpecId(connection)) === specId || baseConnectionIds.has(normalizeId(connection.baseConnectionId))
+      );
+      const configuredSourceConnectionIds = configuredSourceConnections.map((connection) => connection.id);
+      const relatedFlows = toArray(flows).filter((flow) =>
+        hasAnyId(extractIds(flow.sourceConnectionIds ?? flow.sourceConnections), configuredSourceConnectionIds)
+      );
+      const uiAttributes = getSourceUiAttributes(spec);
+
+      return orderRow(
+        {
+          connection_spec_id: specId,
+          source_name: pickFirst(spec, ["name", "displayName", "title"]),
+          source_description: pickFirst(spec, ["description"]),
+          source_category: pickSpecCategory(spec),
+          source_type: pickFirst(uiAttributes, ["sourceType", "type"]) ?? pickFirst(spec, ["providerId", "type"]),
+          provider_id: pickFirst(spec, ["providerId"]),
+          spec_version: pickFirst(spec, ["version", "specVersion"]),
+          is_source: true,
+          authentication_types: joinValuesOrDash(collectSpecAuthTypes(spec)),
+          documentation_url: pickSpecDocumentationUrl(spec, uiAttributes),
+          icon_name: pickSpecIconName(spec, uiAttributes),
+          is_beta: pickFirst(uiAttributes, ["isBeta", "beta"]) ?? pickNested(spec, [["attributes", "isBeta"], ["attributes", "beta"]]),
+          is_deprecated: pickFirst(uiAttributes, ["isDeprecated", "deprecated"]) ?? pickNested(spec, [["attributes", "isDeprecated"], ["attributes", "deprecated"]]),
+          configured_base_connection_count: baseConnections.length,
+          configured_source_connection_count: configuredSourceConnections.length,
+          configured_dataflow_count: relatedFlows.length,
+          enabled_dataflow_count: relatedFlows.filter(isEnabledState).length,
+          raw_connection_spec_file: spec.rawFile
+        },
+        AEP_SOURCE_CATALOG_COLUMNS
+      );
+    });
+}
+
+export function buildAepDestinationCatalogRows({ connectionSpecs = [], connections = [], targetConnections = [], flows = [] } = {}) {
+  const context = buildAepContext({ connectionSpecs, connections, targetConnections });
+  return toArray(connectionSpecs)
+    .filter(isDestinationConnectionSpec)
+    .map((spec) => {
+      const specId = normalizeId(spec.id);
+      const baseConnections = toArray(connections).filter((connection) => normalizeId(getConnectionSpecId(connection)) === specId);
+      const baseConnectionIds = new Set(baseConnections.map((connection) => normalizeId(connection.id)).filter(Boolean));
+      const configuredTargetConnections = toArray(targetConnections).filter((connection) =>
+        normalizeId(getConnectionSpecId(connection)) === specId || baseConnectionIds.has(normalizeId(connection.baseConnectionId))
+      );
+      const configuredTargetConnectionIds = configuredTargetConnections.map((connection) => connection.id);
+      const relatedFlows = toArray(flows).filter((flow) =>
+        isDestinationFlow(flow, context) && hasAnyId(extractIds(flow.targetConnectionIds ?? flow.targetConnections), configuredTargetConnectionIds)
+      );
+      const uiAttributes = getDestinationUiAttributes(spec);
+
+      return orderRow(
+        {
+          connection_spec_id: specId,
+          destination_name: pickFirst(spec, ["name", "displayName", "title"]),
+          destination_description: pickFirst(spec, ["description"]),
+          destination_category: pickSpecCategory(spec),
+          destination_type: pickFirst(uiAttributes, ["destinationType", "type"]) ?? pickFirst(spec, ["providerId", "type"]),
+          provider_id: pickFirst(spec, ["providerId"]),
+          spec_version: pickFirst(spec, ["version", "specVersion"]),
+          is_destination: true,
+          authentication_types: joinValuesOrDash(collectSpecAuthTypes(spec)),
+          delivery_type: pickFirst(uiAttributes, ["deliveryType", "destinationDelivery", "activationMode"]),
+          supported_data_types: joinValuesOrDash(collectSpecSupportedValues(spec, ["supportedDataTypes", "dataTypes", "supportedDataType"])),
+          supported_frequencies: joinValuesOrDash(collectSpecSupportedValues(spec, ["supportedFrequencies", "frequency", "frequencies"])),
+          documentation_url: pickSpecDocumentationUrl(spec, uiAttributes),
+          icon_name: pickSpecIconName(spec, uiAttributes),
+          is_beta: pickFirst(uiAttributes, ["isBeta", "beta"]) ?? pickNested(spec, [["attributes", "isBeta"], ["attributes", "beta"]]),
+          is_deprecated: pickFirst(uiAttributes, ["isDeprecated", "deprecated"]) ?? pickNested(spec, [["attributes", "isDeprecated"], ["attributes", "deprecated"]]),
+          configured_base_connection_count: baseConnections.length,
+          configured_target_connection_count: configuredTargetConnections.length,
+          configured_dataflow_count: relatedFlows.length,
+          enabled_dataflow_count: relatedFlows.filter(isEnabledState).length,
+          raw_connection_spec_file: spec.rawFile
+        },
+        AEP_DESTINATION_CATALOG_COLUMNS
+      );
+    });
+}
 export function buildAepSourcesListRows({ connectionSpecs = [], connections = [], sourceConnections = [], flows = [] } = {}) {
-  const context = buildAepContext({ connectionSpecs, connections, sourceConnections, flows });
-  const sourceFlows = toArray(flows).filter((flow) => !isDestinationFlow(flow));
-  const sourceConnectionIdsInFlows = new Set(sourceFlows.flatMap((flow) => extractIds(flow.sourceConnectionIds ?? flow.sourceConnections)));
-  const relevantSourceConnections = toArray(sourceConnections).filter((connection) =>
-    sourceConnectionIdsInFlows.size === 0 || sourceConnectionIdsInFlows.has(normalizeId(connection.id))
-  );
+  const context = buildAepContext({ connectionSpecs, connections, sourceConnections });
+  const sourceFlows = toArray(flows).filter((flow) => isSourceFlow(flow, context));
+  const relevantSourceConnections = filterAepSourceConnections(sourceConnections, context);
   const grouped = groupByBaseConnection(relevantSourceConnections);
 
   return Array.from(grouped.entries()).map(([baseConnectionId, groupedSourceConnections]) => {
@@ -457,7 +590,7 @@ export function buildAepSourcesListRows({ connectionSpecs = [], connections = []
         source_id: baseConnectionId || firstSourceConnection.id,
         source_name: pickFirst(baseConnection, ["name", "displayName"]) ?? pickFirst(firstSourceConnection, ["name", "displayName"]),
         source_type: pickFirst(spec, ["providerId", "type"]) ?? pickFirst(baseConnection, ["type"]),
-        source_category: pickNested(spec, [["attributes", "category"], ["category"]]),
+        source_category: pickSpecCategory(spec),
         source_state: pickFirst(baseConnection, ["state", "status"]) ?? pickFirst(firstSourceConnection, ["state", "status"]),
         connection_spec_id: specId,
         connection_spec_name: pickFirst(spec, ["name", "displayName", "title"]),
@@ -479,7 +612,7 @@ export function buildAepSourcesListRows({ connectionSpecs = [], connections = []
 export function buildAepSourceDataflowRows({ connectionSpecs = [], connections = [], sourceConnections = [], targetConnections = [], flows = [] } = {}) {
   const context = buildAepContext({ connectionSpecs, connections, sourceConnections, targetConnections, flows });
   return toArray(flows)
-    .filter((flow) => !isDestinationFlow(flow))
+    .filter((flow) => isSourceFlow(flow, context))
     .map((flow) => {
       const sourceConnection = firstMapped(extractIds(flow.sourceConnectionIds ?? flow.sourceConnections), context.sourceConnectionsById) ?? {};
       const baseConnection = context.connectionsById.get(normalizeId(sourceConnection.baseConnectionId)) ?? {};
@@ -520,12 +653,9 @@ export function buildAepSourceDataflowRows({ connectionSpecs = [], connections =
 }
 
 export function buildAepDestinationsListRows({ connectionSpecs = [], connections = [], targetConnections = [], flows = [] } = {}) {
-  const context = buildAepContext({ connectionSpecs, connections, targetConnections, flows });
-  const destinationFlows = toArray(flows).filter(isDestinationFlow);
-  const targetConnectionIdsInFlows = new Set(destinationFlows.flatMap((flow) => extractIds(flow.targetConnectionIds ?? flow.targetConnections)));
-  const relevantTargetConnections = toArray(targetConnections).filter((connection) =>
-    targetConnectionIdsInFlows.size === 0 || targetConnectionIdsInFlows.has(normalizeId(connection.id))
-  );
+  const context = buildAepContext({ connectionSpecs, connections, targetConnections });
+  const destinationFlows = toArray(flows).filter((flow) => isDestinationFlow(flow, context));
+  const relevantTargetConnections = filterAepDestinationTargetConnections(targetConnections, context);
   const grouped = groupByBaseConnection(relevantTargetConnections);
 
   return Array.from(grouped.entries()).map(([baseConnectionId, groupedTargetConnections]) => {
@@ -539,7 +669,7 @@ export function buildAepDestinationsListRows({ connectionSpecs = [], connections
         destination_id: baseConnectionId || firstTargetConnection.id,
         destination_name: pickFirst(baseConnection, ["name", "displayName"]) ?? pickFirst(firstTargetConnection, ["name", "displayName"]),
         destination_type: pickFirst(spec, ["providerId", "type"]) ?? pickFirst(baseConnection, ["type"]),
-        destination_category: pickNested(spec, [["attributes", "category"], ["category"]]),
+        destination_category: pickSpecCategory(spec),
         destination_state: pickFirst(baseConnection, ["state", "status"]) ?? pickFirst(firstTargetConnection, ["state", "status"]),
         connection_spec_id: specId,
         connection_spec_name: pickFirst(spec, ["name", "displayName", "title"]),
@@ -562,7 +692,7 @@ export function buildAepDestinationsListRows({ connectionSpecs = [], connections
 export function buildAepDestinationDataflowRows({ connectionSpecs = [], connections = [], sourceConnections = [], targetConnections = [], flows = [] } = {}) {
   const context = buildAepContext({ connectionSpecs, connections, sourceConnections, targetConnections, flows });
   return toArray(flows)
-    .filter(isDestinationFlow)
+    .filter((flow) => isDestinationFlow(flow, context))
     .map((flow) => {
       const targets = extractIds(flow.targetConnectionIds ?? flow.targetConnections)
         .map((id) => context.targetConnectionsById.get(id))
@@ -801,11 +931,14 @@ function buildPlatformUrl(config, endpointOrUrl, query = {}) {
 }
 
 function buildAepContext({ connectionSpecs = [], connections = [], sourceConnections = [], targetConnections = [] } = {}) {
+  const specs = toArray(connectionSpecs);
   return {
-    connectionSpecsById: indexById(connectionSpecs),
+    connectionSpecsById: indexById(specs),
     connectionsById: indexById(connections),
     sourceConnectionsById: indexById(sourceConnections),
-    targetConnectionsById: indexById(targetConnections)
+    targetConnectionsById: indexById(targetConnections),
+    hasSourceSpecMarkers: specs.some(isSourceConnectionSpec),
+    hasDestinationSpecMarkers: specs.some(isDestinationConnectionSpec)
   };
 }
 
@@ -820,12 +953,133 @@ function groupByBaseConnection(connections) {
   return grouped;
 }
 
-function isDestinationFlow(flow) {
-  return toArray([
+function filterAepSourceConnections(sourceConnections, context) {
+  const connections = toArray(sourceConnections);
+  if (!context.hasSourceSpecMarkers) return connections;
+  return connections.filter((connection) => isSourceConnection(connection, context));
+}
+
+function filterAepDestinationTargetConnections(targetConnections, context) {
+  const connections = toArray(targetConnections);
+  if (!context.hasDestinationSpecMarkers) return connections;
+  return connections.filter((connection) => isDestinationTargetConnection(connection, context));
+}
+
+function isSourceFlow(flow, context = {}) {
+  if (isDestinationFlow(flow, context)) return false;
+  const sourceRefs = toArray(flow?.sourceConnections).filter(isObject);
+  if (sourceRefs.some((connection) => isSourceConnection(connection, context))) return true;
+
+  const sourceIds = extractIds(flow?.sourceConnectionIds ?? flow?.sourceConnections);
+  if (sourceIds.length === 0 || !context.hasSourceSpecMarkers) return true;
+  return sourceIds.some((id) => isSourceConnection(context.sourceConnectionsById?.get(normalizeId(id)), context));
+}
+
+function isSourceConnection(connection, context = {}) {
+  if (!isObject(connection)) return false;
+  const spec = context.connectionSpecsById?.get(normalizeId(getConnectionSpecId(connection))) ?? {};
+  return isSourceConnectionSpec(spec);
+}
+
+function isDestinationTargetConnection(connection, context = {}) {
+  if (!isObject(connection)) return false;
+  const spec = context.connectionSpecsById?.get(normalizeId(getConnectionSpecId(connection))) ?? {};
+  return isDestinationConnectionSpec(spec);
+}
+
+function isSourceConnectionSpec(spec) {
+  if (!isObject(spec)) return false;
+  const sourceUi = getSourceUiAttributes(spec);
+  if (isTruthyValue(pickFirst(sourceUi, ["isSource"]))) return true;
+  if (isTruthyValue(pickFirst(getDestinationUiAttributes(spec), ["isDestination"]))) return false;
+  return Boolean(spec.sourceSpec || spec.sourceSpecs) && !(spec.targetSpec || spec.targetSpecs);
+}
+
+function isDestinationConnectionSpec(spec) {
+  if (!isObject(spec)) return false;
+  const destinationUi = getDestinationUiAttributes(spec);
+  if (isTruthyValue(pickFirst(destinationUi, ["isDestination"]))) return true;
+  if (isTruthyValue(pickFirst(getSourceUiAttributes(spec), ["isSource"]))) return false;
+  return Boolean(spec.targetSpec || spec.targetSpecs) && !(spec.sourceSpec || spec.sourceSpecs);
+}
+
+function getSourceUiAttributes(spec) {
+  return firstObject([
+    spec?.sourceSpec?.attributes?.uiAttributes,
+    spec?.sourceSpec?.uiAttributes,
+    ...toArray(spec?.sourceSpecs).map((item) => item?.attributes?.uiAttributes ?? item?.uiAttributes),
+    spec?.attributes?.source?.uiAttributes,
+    spec?.attributes?.uiAttributes
+  ]) ?? {};
+}
+
+function getDestinationUiAttributes(spec) {
+  return firstObject([
+    spec?.targetSpec?.attributes?.uiAttributes,
+    spec?.targetSpec?.uiAttributes,
+    ...toArray(spec?.targetSpecs).map((item) => item?.attributes?.uiAttributes ?? item?.uiAttributes),
+    spec?.attributes?.destination?.uiAttributes,
+    spec?.attributes?.uiAttributes
+  ]) ?? {};
+}
+
+function pickSpecCategory(spec) {
+  return pickNested(spec, [
+    ["attributes", "category"],
+    ["category"],
+    ["sourceSpec", "attributes", "category"],
+    ["targetSpec", "attributes", "category"]
+  ]);
+}
+
+function collectSpecAuthTypes(spec) {
+  const values = [];
+  const candidates = [
+    spec?.authSpec,
+    spec?.authSpecs,
+    spec?.attributes?.authSpec,
+    spec?.attributes?.authSpecs,
+    spec?.sourceSpec?.authSpec,
+    spec?.targetSpec?.authSpec
+  ];
+  for (const candidate of candidates) {
+    for (const item of toArray(candidate)) {
+      values.push(isObject(item) ? pickFirst(item, ["name", "specName", "type", "title"]) : item);
+    }
+  }
+  return uniqueValues(values);
+}
+
+function collectSpecSupportedValues(spec, keys) {
+  return uniqueValues(keys.flatMap((key) => collectDeepValues(spec, [key])));
+}
+
+function pickSpecDocumentationUrl(spec, uiAttributes = {}) {
+  return pickFirst(uiAttributes, ["documentationLink", "documentationUrl", "documentationURL", "helpLink"]) ??
+    pickNested(spec, [["attributes", "documentationLink"], ["attributes", "documentationUrl"], ["documentationUrl"]]);
+}
+
+function pickSpecIconName(spec, uiAttributes = {}) {
+  return pickFirst(uiAttributes, ["iconName", "icon", "logo"]) ??
+    pickNested(spec, [["attributes", "iconName"], ["attributes", "icon"]]);
+}
+
+function isTruthyValue(value) {
+  return value === true || String(value).toLowerCase() === "true";
+}
+function isDestinationFlow(flow, context = {}) {
+  const explicitFlags = toArray([
     flow?.inheritedAttributes?.properties?.isDestinationFlow,
     flow?.properties?.isDestinationFlow,
     flow?.isDestinationFlow
-  ]).some((value) => value === true || String(value).toLowerCase() === "true");
+  ]);
+  if (explicitFlags.some(isTruthyValue)) return true;
+
+  const targetRefs = toArray(flow?.targetConnections).filter(isObject);
+  if (targetRefs.some((connection) => isDestinationTargetConnection(connection, context))) return true;
+
+  return extractIds(flow?.targetConnectionIds ?? flow?.targetConnections)
+    .some((id) => isDestinationTargetConnection(context.targetConnectionsById?.get(normalizeId(id)), context));
 }
 
 function isEnabledState(value) {
