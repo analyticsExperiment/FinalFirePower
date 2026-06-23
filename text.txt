@@ -7,6 +7,14 @@ try {
 }
 
 
+$env:NODE_TLS_REJECT_UNAUTHORIZED="0"
+try {
+  npm run inventory:aep-ajo -- --scope aep --sandbox prod
+} finally {
+  Remove-Item Env:NODE_TLS_REJECT_UNAUTHORIZED -ErrorAction SilentlyContinue
+}
+
+
 
 $run = Get-ChildItem .\aep-ajo-inventory-output -Directory |
     Sort-Object LastWriteTime -Descending |
