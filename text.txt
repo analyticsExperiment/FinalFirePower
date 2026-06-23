@@ -49,3 +49,6 @@ try {
 } finally {
   Remove-Item Env:NODE_TLS_REJECT_UNAUTHORIZED -ErrorAction SilentlyContinue
 }
+
+
+ADOBE_SCOPES=cjm.suppression_service.client.delete,cjm.suppression_service.client.all,openid,session,AdobeID,read_organizations,additional_info.projectedProductContext,target_sdk,additional_info.roles
