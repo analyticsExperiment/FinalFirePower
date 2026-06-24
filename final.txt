@@ -1,0 +1,54 @@
+@'
+import "dotenv/config";
+
+const tokenUrl = process.env.ADOBE_IMS_TOKEN_URL || "https://ims-na1.adobelogin.com/ims/token/v3";
+const sandbox = process.env.AEP_SANDBOX_NAME || process.env.ADOBE_SANDBOX_NAME;
+
+const tokenBody = new URLSearchParams({
+  grant_type: "client_credentials",
+  client_id: process.env.ADOBE_CLIENT_ID,
+  client_secret: process.env.ADOBE_CLIENT_SECRET,
+  scope: process.env.ADOBE_SCOPES
+});
+
+const tokenResponse = await fetch(tokenUrl, {
+  method: "POST",
+  headers: { "content-type": "application/x-www-form-urlencoded" },
+  body: tokenBody
+});
+
+const tokenJson = await tokenResponse.json();
+console.log("Token status:", tokenResponse.status);
+
+if (!tokenResponse.ok) {
+  console.log(tokenJson);
+  process.exit(1);
+}
+
+for (const page of [0, 1]) {
+  const url = `https://platform.adobe.io/ajo/journey?page=${page}&pageSize=1`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${tokenJson.access_token}`,
+      "x-api-key": process.env.ADOBE_CLIENT_ID,
+      "x-gw-ims-org-id": process.env.ADOBE_ORG_ID,
+      "x-sandbox-name": sandbox,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "Cache-Control": "no-cache"
+    }
+  });
+
+  const text = await response.text();
+  console.log(`\nPAGE ${page} STATUS:`, response.status);
+  console.log(text.slice(0, 1000));
+}
+'@ | Set-Content .\tmp-ajo-debug.mjs -Encoding utf8
+
+$env:NODE_TLS_REJECT_UNAUTHORIZED="0"
+try {
+  node .\tmp-ajo-debug.mjs
+} finally {
+  Remove-Item Env:NODE_TLS_REJECT_UNAUTHORIZED -ErrorAction SilentlyContinue
+  Remove-Item .\tmp-ajo-debug.mjs -ErrorAction SilentlyContinue
+}
