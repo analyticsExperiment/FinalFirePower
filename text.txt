@@ -76,3 +76,14 @@ try {
 audiencemanager_api openid AdobeID read_organizations additional_info.projectedProductContext additional_info.roles
 
 
+$env:ADOBE_SCOPES="audiencemanager_api,openid,AdobeID,read_organizations,additional_info.projectedProductContext,additional_info.roles"
+$env:NODE_TLS_REJECT_UNAUTHORIZED="0"
+
+try {
+  npm run inventory:aam
+} finally {
+  Remove-Item Env:ADOBE_SCOPES -ErrorAction SilentlyContinue
+  Remove-Item Env:NODE_TLS_REJECT_UNAUTHORIZED -ErrorAction SilentlyContinue
+}
+
+
