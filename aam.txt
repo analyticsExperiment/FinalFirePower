@@ -1,0 +1,396 @@
+# Audience Manager Architecture Review – Discovery Notes
+
+## 1. Purpose
+
+As part of the Adobe Target and Web SDK migration discovery phase, we reviewed the current Adobe Audience Manager configuration to understand how audience data is being collected, qualified, and activated.
+
+The objective of this review is to identify:
+
+* how Audience Manager is currently receiving data,
+* whether Adobe Analytics server-side forwarding is active,
+* whether Web SDK datastream forwarding is contributing data to AAM,
+* which data sources are configured,
+* how signals are being used to build traits and segments,
+* and how AAM segments are being activated through destinations.
+
+This review is important because Adobe Target audience qualification and downstream media activation may depend on AAM traits and segments. During Web SDK migration, it is critical to understand which audience data flows must be preserved, replaced, or validated.
+
+---
+
+## 2. Current Observations
+
+During the AAM architecture review, the following observations were made:
+
+* Server-side forwarding appears to be enabled inside the Adobe Analytics extension in Adobe Launch/Data Collection.
+* However, while inspecting the site network request and response, the expected Audience Manager response objects were not observed.
+* The Analytics response did not appear to include AAM-related response indicators such as postbacks or region-related response details.
+* This suggests that, although server-side forwarding may be enabled at the tag/extension level, the inspected request may not be successfully forwarding Analytics data into Audience Manager through the expected Analytics server-side forwarding path.
+* One possible reason is that the relevant report suite-level server-side forwarding configuration may not be fully enabled or aligned.
+* Web SDK extension configuration was also observed in the implementation.
+* In the Web SDK datastream configuration, Audience Manager is enabled as a service.
+* Flattened XDM fields are also configured to be forwarded to Audience Manager.
+* In the Audience Manager portal, multiple data sources were observed.
+* These include Adobe Analytics/report-suite-based data sources, general web data sources, media-related data sources, and other configured sources.
+* In the signal search area, Adobe Analytics-style context data/eVar signals were visible.
+* Flattened XDM fields were also visible as signals.
+* This indicates that AAM may be receiving data through more than one ingestion path.
+
+---
+
+## 3. Current AAM Data Ingestion Architecture
+
+Based on the observations, the current AAM setup appears to have multiple potential data ingestion paths.
+
+### 3.1 Adobe Analytics / Report Suite-Based Data
+
+Audience Manager has multiple data sources configured that appear to be associated with Adobe Analytics report suites.
+
+This indicates that Adobe Analytics-origin data is available within AAM and may be used for trait and segment qualification.
+
+However, the browser-level validation did not show the expected AAM response indicators on the inspected Analytics hit. Therefore, the exact forwarding path still needs to be confirmed.
+
+The current interpretation is:
+
+* Adobe Analytics-related data sources exist in AAM.
+* Analytics context data/eVar-type signals are visible in AAM.
+* Traits and segments may be using these Analytics-origin signals.
+* But the inspected page request did not clearly confirm active server-side forwarding through the Analytics response.
+
+This means Analytics-origin data appears to be present in AAM, but further validation is required to confirm whether it is coming through active server-side forwarding, historical configuration, published Analytics segments, or another configured integration path.
+
+---
+
+### 3.2 Web SDK Datastream to Audience Manager
+
+The Web SDK configuration appears to be another active data path into Audience Manager.
+
+In the datastream configuration, Audience Manager is enabled as a service, and flattened XDM fields are configured to be forwarded.
+
+This explains why flattened XDM fields are visible in the AAM signal search area.
+
+The current interpretation is:
+
+* Web SDK is sending data to Adobe Experience Platform Edge Network.
+* The datastream has Audience Manager enabled.
+* XDM data is being forwarded from the datastream to AAM.
+* Flattened XDM fields are available in AAM as signals.
+* These signals can be used for trait qualification and segment building.
+
+This indicates that the client’s AAM architecture is not dependent only on the older Analytics server-side forwarding path. Web SDK datastream forwarding also appears to be contributing data to Audience Manager.
+
+---
+
+### 3.3 General Web Data Source
+
+A general web data source was also observed in AAM.
+
+This may be used to collect website-level signals that are not strictly tied to one specific Adobe Analytics report suite or media source.
+
+This data source should be reviewed further to understand:
+
+* which signals are mapped to it,
+* which traits depend on it,
+* whether it is receiving data from Web SDK, Analytics, DIL, or another source,
+* and whether it is still required in the future-state implementation.
+
+---
+
+### 3.4 Media and Marketing Data Sources
+
+Multiple media-related data sources were also observed in AAM.
+
+These may be used to support advertising, remarketing, or paid-media audience use cases.
+
+These data sources should be reviewed separately because they may include:
+
+* media platform integrations,
+* onboarded data,
+* partner data,
+* campaign interaction data,
+* or destination-specific audience mappings.
+
+These are important for migration planning because AAM may be supporting not only on-site personalization but also downstream media activation.
+
+---
+
+### 3.5 AEP / RTCDP Audience Inputs
+
+The current AAM setup also appears to include audience inputs from AEP/RTCDP segments or audiences.
+
+This suggests that AAM may be receiving or using audiences from broader Adobe Experience Platform audience workflows.
+
+This should be validated further by reviewing:
+
+* which AEP/RTCDP audiences are being shared into AAM,
+* whether those audiences are used in AAM segments,
+* whether they are activated to destinations,
+* and whether these audience flows will continue or change in the future-state architecture.
+
+---
+
+## 4. Signals, Traits, Segments, and Destinations
+
+The current Audience Manager architecture follows the standard AAM audience-building model:
+
+```text
+Incoming Data Sources
+        ↓
+Signals
+        ↓
+Traits
+        ↓
+Segments
+        ↓
+Destinations / Activations
+```
+
+### Signals
+
+Signals are the raw key-value data points received by Audience Manager. In this review, two important signal types were observed:
+
+* Adobe Analytics-style context data/eVar signals
+* Web SDK flattened XDM field signals
+
+This indicates that AAM is receiving data from both Analytics-style and Web SDK-style implementations.
+
+### Traits
+
+Traits are created using signal rules. When a user meets the rule condition, the trait is realized for that user.
+
+The observed trait realization indicates that at least some incoming signals are being successfully evaluated against trait rules.
+
+### Segments
+
+Segments are built using one or more traits. If the required trait conditions are met, the user qualifies for the segment.
+
+The fact that segment qualification is visible suggests that AAM is actively building audiences based on realized traits.
+
+### Destinations
+
+Destinations are used to activate AAM segments to downstream systems such as advertising platforms, DSPs, ad networks, analytics destinations, or other marketing platforms.
+
+Multiple marketing-based destinations were observed, indicating that AAM is likely being used as an activation layer in addition to an audience qualification layer.
+
+---
+
+## 5. Interpretation of the Signal vs Trait Observation
+
+One key observation is that real-time signals were not clearly visible in the expected way, but traits and segments were showing realization activity.
+
+This can happen for several reasons:
+
+* The visible signal area may not show every signal in real time.
+* Some signals may already be mapped to traits and therefore may not appear as unused signals.
+* Signal visibility may depend on reporting thresholds, data freshness, or the specific signal search/reporting view being used.
+* Traits and segments may be realizing from Web SDK-forwarded XDM fields.
+* Traits and segments may be realizing from Analytics-origin signals.
+* Traits and segments may be realizing from batch/onboarded data or media data sources.
+* Trait realization can continue based on data sources even if the inspected browser hit does not clearly show Analytics server-side forwarding response objects.
+
+Therefore, the presence of realized traits and segments confirms that AAM is receiving or maintaining audience qualification data, but it does not by itself prove that the inspected page hit is forwarding data through Adobe Analytics server-side forwarding.
+
+---
+
+## 6. Server-Side Forwarding Observation
+
+The Adobe Analytics extension appears to have server-side forwarding enabled. However, the inspected site response did not show the expected Audience Manager response objects.
+
+This suggests a possible configuration gap.
+
+The likely possibilities are:
+
+1. Server-side forwarding is enabled in the Launch/Data Collection extension but not fully enabled for the relevant Adobe Analytics report suite.
+2. The inspected page may be using a different report suite than the one configured for forwarding.
+3. The inspected request may not contain the required identity or context needed for AAM forwarding.
+4. The implementation may be moving toward Web SDK datastream forwarding instead of relying on Analytics server-side forwarding.
+5. The site may have multiple tracking paths, and the inspected request may not represent the path that is feeding AAM.
+6. AAM traits and segments may be realizing from Web SDK, Analytics-published data, onboarded data, or media data sources rather than the inspected Analytics hit.
+
+This should be treated as a validation item rather than a confirmed failure until the report suite configuration and datastream behavior are reviewed end-to-end.
+
+---
+
+## 7. Web SDK and Datastream Observation
+
+The Web SDK path appears to be configured more clearly for Audience Manager forwarding.
+
+Observed configuration:
+
+* Web SDK extension is configured.
+* Web SDK datastream is firing.
+* Audience Manager is enabled as a service in the datastream.
+* Flattened XDM fields are configured for forwarding.
+* Flattened XDM fields are visible in AAM signal search.
+
+This suggests that Web SDK datastream forwarding is likely contributing data to AAM.
+
+This is important for the migration because the future-state architecture may rely more heavily on Web SDK and datastream-based forwarding rather than the older Analytics server-side forwarding pattern.
+
+---
+
+## 8. Current Architecture Summary
+
+Based on the review, the current AAM architecture appears to include multiple data paths:
+
+```text
+Website / Adobe Launch
+        ↓
+Adobe Analytics Extension
+        ↓
+Analytics Report Suites / Analytics Data Sources
+        ↓
+Audience Manager Signals
+```
+
+```text
+Website / Web SDK
+        ↓
+AEP Edge Network
+        ↓
+Datastream with Audience Manager enabled
+        ↓
+Flattened XDM fields forwarded to AAM
+        ↓
+Audience Manager Signals
+```
+
+```text
+Media / Partner / Other Sources
+        ↓
+AAM Data Sources
+        ↓
+Traits and Segments
+        ↓
+Marketing Destinations
+```
+
+```text
+AEP / RTCDP Audiences
+        ↓
+Audience Sharing / Audience Inputs
+        ↓
+AAM Segments or Activations
+```
+
+This means AAM is likely operating as a central audience layer that receives data from Adobe Analytics, Web SDK/datastream forwarding, media sources, and AEP/RTCDP audiences, then uses signals to build traits, traits to build segments, and segments to activate destinations.
+
+---
+
+## 9. Migration Considerations
+
+As the implementation moves toward Web SDK-based Adobe solutioning, the following AAM dependencies should be reviewed carefully.
+
+### 9.1 Confirm the Primary Data Path
+
+The team should confirm whether AAM is expected to receive data primarily through:
+
+* Adobe Analytics server-side forwarding,
+* Web SDK datastream forwarding,
+* AEP/RTCDP audience sharing,
+* onboarded/batch sources,
+* media sources,
+* or a combination of these.
+
+This distinction is important because each path has different configuration, timing, and validation requirements.
+
+### 9.2 Validate Server-Side Forwarding
+
+Since the Analytics extension shows server-side forwarding enabled but the response did not show expected AAM objects, the report-suite-level configuration should be validated.
+
+Validation should include:
+
+* confirming the report suite used by the site,
+* confirming server-side forwarding is enabled for that report suite,
+* confirming ECID/identity is available,
+* checking whether the Analytics response includes AAM response objects,
+* and confirming whether the relevant Analytics signals are visible in AAM after the hit.
+
+### 9.3 Validate Web SDK Datastream Forwarding
+
+The Web SDK and datastream path should be validated separately.
+
+Validation should include:
+
+* confirming the correct datastream ID is used by the site,
+* confirming Audience Manager service is enabled in the datastream,
+* confirming flattened XDM field forwarding configuration,
+* confirming XDM fields appear as AAM signals,
+* and confirming those signals are mapped to traits where required.
+
+### 9.4 Review Trait and Segment Dependencies
+
+Traits and segments should be reviewed to identify which data sources and signals they depend on.
+
+This review should answer:
+
+* Which traits are built from Analytics-origin signals?
+* Which traits are built from Web SDK/XDM signals?
+* Which traits are built from media or partner data sources?
+* Which segments depend on those traits?
+* Which segments are activated to destinations?
+* Which segments are still used by Target, media, or other downstream systems?
+
+### 9.5 Review Destination Dependencies
+
+AAM destinations should be reviewed to understand where segments are being activated.
+
+This is important because a migration that changes data collection can also impact:
+
+* segment qualification,
+* destination population,
+* media activation,
+* remarketing audiences,
+* and downstream campaign delivery.
+
+---
+
+## 10. Key Risks
+
+The following risks should be considered:
+
+* Analytics server-side forwarding may not be fully active for the inspected report suite.
+* Web SDK and Analytics may both be sending similar data, creating overlap or duplication.
+* AAM traits may depend on legacy Analytics context data values that may change during Web SDK migration.
+* Flattened XDM field names may not match existing trait rules unless intentionally mapped.
+* Some segments may depend on media or partner data sources that are outside the website implementation scope.
+* Destination mappings may continue to depend on AAM segment qualification even after Web SDK migration.
+* AEP/RTCDP audiences shared into AAM may need separate governance and validation.
+* Signal visibility in AAM may not provide a complete real-time view of all active data paths.
+
+---
+
+## 11. Recommended Next Steps
+
+The following next steps are recommended:
+
+1. Confirm the Adobe Analytics report suite used on the inspected site.
+2. Validate whether server-side forwarding is enabled at the report-suite level.
+3. Re-test the Analytics network response and check for AAM response objects.
+4. Confirm whether Web SDK datastream forwarding is the intended primary AAM data path.
+5. Document all AAM data sources and classify them by source type:
+
+   * Adobe Analytics
+   * Web SDK/XDM
+   * general web
+   * media/partner
+   * AEP/RTCDP
+   * onboarded/batch
+6. Export or review key traits and identify the signal rules used.
+7. Map traits to segments.
+8. Map segments to destinations.
+9. Identify which traits/segments are used by Adobe Target or media activation.
+10. Create a migration dependency checklist for AAM signals, traits, segments, and destinations.
+11. Validate that required signals continue to flow after Web SDK migration.
+12. Confirm that destination populations remain stable after migration.
+
+---
+
+## 12. Conclusion
+
+The current Audience Manager setup appears to be a multi-source audience architecture. Data appears to be entering AAM from Adobe Analytics/report-suite-based sources, Web SDK datastream forwarding, general web data, media-related sources, and potentially AEP/RTCDP audiences.
+
+Although server-side forwarding appears to be enabled in the Adobe Analytics extension, the inspected browser response did not show the expected AAM response objects, so report-suite-level forwarding and the exact Analytics-to-AAM path should be validated further.
+
+At the same time, Web SDK datastream forwarding appears to be configured and likely active, as AAM is enabled as a datastream service and flattened XDM fields are visible in AAM signals.
+
+Overall, AAM continues to function as an audience qualification and activation layer where incoming signals are used to build traits, traits are used to build segments, and segments are activated to downstream destinations. For Web SDK migration, the main focus should be to preserve the required signal availability, trait qualification, segment population, and destination activation paths.
