@@ -89,3 +89,49 @@ try {
 
 https://aam.adobe.io
 
+
+
+## How the Adobe Target Inventory Application Was Built
+
+The inventory application was built as a structured API-based extraction and reporting utility to support the Adobe Target discovery and migration assessment.
+
+At a high level, the approach followed was:
+
+1. **Reviewed Adobe Target API Documentation**
+   We first reviewed the available Adobe Target Admin API documentation to understand which endpoints could be used to extract activities, offers, audiences, and profile-related information.
+
+2. **Validated API Access and Responses**
+   Before building the application, we validated the API authentication and sample endpoint responses using Postman. This helped confirm that the required Target objects could be retrieved through read-only API calls.
+
+3. **Identified Required Inventory Outputs**
+   We defined the required business outputs, including:
+
+   * Activities List
+   * Activity Details Inventory
+   * Offers List
+   * Offer Details Inventory
+   * Audiences List
+   * Audience Details Inventory
+   * Profile Attributes / Profile Script Inventory
+
+4. **Built a Node.js-Based Extraction Utility**
+   After validating the API responses, we created a Node.js utility to authenticate with Adobe, call the required Target APIs, handle pagination, and fetch detailed records for each activity, offer, and audience.
+
+5. **Stored Raw API Responses for Auditability**
+   All API responses were saved as raw JSON files so that the original Target data could be retained for validation, troubleshooting, and future reference.
+
+6. **Transformed JSON into Business-Readable Inventory**
+   The raw JSON responses were then parsed and transformed into structured inventory rows. The logic was designed to make the output readable for both business and implementation teams, rather than simply flattening the raw API response.
+
+7. **Generated CSV and Excel Workbook Outputs**
+   Open-source Node.js libraries were used to convert the structured inventory data into CSV files and an Excel workbook. Each workbook tab represents a specific inventory area such as activities, offers, audiences, and details.
+
+8. **Added Validation and Rebuild Capability**
+   Additional checks were added to compare list and detail outputs, identify missing records, and allow the workbook to be regenerated from existing raw JSON files without running the full API extraction again.
+
+9. **Prepared the Inventory for Migration Review**
+   The final workbook provides a consolidated view of Adobe Target activities, mboxes/selectors, audiences, offers, reporting dependencies, and profile-related references. This will be used as a baseline for Web SDK migration planning and dependency analysis.
+
+In summary, the application was built by first validating Adobe Target API access, then creating a Node.js-based read-only extraction process, storing raw JSON for auditability, transforming the responses into structured business-readable outputs, and finally generating CSV and Excel inventory files for review.
+
+
