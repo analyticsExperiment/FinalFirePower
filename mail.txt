@@ -1,0 +1,12 @@
+Hi [Manager Name],
+
+As part of the Target Web SDK migration work, we would like to clarify two points regarding our scope and the recommended next steps.
+
+First, since we are expected to manage the Data Collection/Launch implementation and ensure that the required Target parameters are passed correctly through Web SDK, we are considering creating a separate test library in Adobe Data Collection. The idea is to use the data already available on the site, map a small set of existing mbox/profile parameters, and validate how they are sent through Web SDK before the wider migration begins. This would help us understand the current data dependencies and identify any gaps early. Please confirm whether we can proceed with this controlled test implementation.
+
+Second, the current Target inventory includes more than 100 active activities, many of which contain existing offer code, rendering logic, selectors, priority checks, and tracking dependencies. We would like to confirm whether our responsibility is limited to migrating the page-to-Target communication and parameter delivery through Web SDK, or whether we are also expected to review and update the activity-level configurations inside Adobe Target. This could include offer code changes, rendering logic, activity priority, collision handling, or other activity-specific updates required for compatibility with the new implementation.
+
+Could you please confirm the expected scope for both areas so that we can plan the implementation and validation activities accordingly?
+
+Thanks,
+[Your Name]
