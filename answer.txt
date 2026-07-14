@@ -1,0 +1,42 @@
+Hi Team,
+
+We reviewed the CIT Data Layer implementation in Adobe Data Collection/Launch to understand its purpose and assess whether it is affecting the existing Adobe Target or OneTrust production implementation.
+
+Based on the code review, the CIT Data Layer appears to have been designed primarily as an observational and enrichment layer. It creates a separate browser-side event queue, `window.citDataLayer`, and consolidates information already available across the page, including `digitalData`, `adobeDataLayer`, URL and referrer values, cookies, local storage, identity details, OneTrust consent state, product/application journey data, and Adobe Target responses. The collected values are then transformed into structured event objects such as `pageview` and `adobe_target`, making the current implementation easier to inspect and debug.
+
+The code also appears to wrap the existing `digitalData.push()` and `adobeDataLayer.push()` methods. The original push operation is executed first, after which the same pushed object is observed and processed by the CIT Data Layer. This suggests that the intention is to listen to existing application events and enrich its own internal queue without replacing or preventing the original data-layer functionality. It also reads previously available entries during initialization and refreshes its structured view when relevant identity, consent, application, route, or Target information becomes available.
+
+For Adobe Target, the implementation captures Target propositions after a Web SDK Send Event has completed. The propositions are transformed into readable activity and experience details, including activity ID, experience ID, default or personalized experience type, proposition ID, scope, and profile response tokens. A summary is appended to the latest CIT page-view object, and a separate `adobe_target` event is also created for detailed debugging. The captured sample shows Target activities and profile response tokens inside the CIT queue; however, it also records `rendered: false`, which means the layer is capturing propositions returned by Target and not independently confirming or controlling whether every experience was displayed.
+
+For OneTrust, the code appears to read and structure the existing consent state, active consent groups, consent cookie values, banner interaction details, and geographic consent information. We did not observe logic that changes consent categories, updates the OneTrust configuration, or overrides the user’s consent choice. Therefore, the current behaviour appears to be consent observation and documentation rather than consent enforcement or modification.
+
+### Response to the Target-related questions
+
+**1. Has Adobe Target or OneTrust behaviour changed in production?**
+
+Based on the code reviewed, no direct change to the existing Target or OneTrust behaviour has been identified. The CIT Data Layer appears to observe Target responses and OneTrust consent values and store them in its own structured queue. It does not appear to modify Target activity eligibility, audience rules, rendering logic, priority, or OneTrust consent configuration.
+
+The optional Target collection setting is configured as disabled by default, and the code does not normally initiate an additional Target decision request. There is also no evidence in the reviewed code that the generated CIT objects are being sent directly to Analytics, AEP, or Target.
+
+**2. Is Adobe Target personalization context affected?**
+
+No direct impact to Target personalization context has been identified from the current implementation. The code captures the personalization context returned by Target, including activities, experiences, propositions, and profile response tokens, but it does not appear to feed this information back into Target or change the parameters used for Target qualification.
+
+We also searched the wider application codebase for `citDataLayer` and related references and did not identify any application-side implementation or developer-driven pushes outside the two Launch/Data Collection scripts reviewed. This supports the understanding that the CIT Data Layer is currently a Launch-managed observational and debugging utility rather than a source that drives production Target decisioning.
+
+### Current assessment
+
+Based on the code and runtime output reviewed, the CIT Data Layer should not directly affect the existing Adobe Analytics, Adobe Target, or OneTrust production implementation. It appears to coexist with the current setup by reading available information, enriching it, and exposing a consolidated diagnostic view in the browser.
+
+As a final validation, we recommend confirming through browser testing that:
+
+* no additional Analytics or Target network requests are generated,
+* existing Target activity qualification and rendering remain unchanged,
+* OneTrust consent selection and enforcement continue to work normally,
+* no Launch rule consumes CIT custom events to initiate additional tracking,
+* and no JavaScript errors or duplicate events are introduced.
+
+Subject to these runtime checks, our current assessment is that the implementation is observational and does not directly modify the existing production Target or OneTrust behaviour.
+
+Thanks,
+[Your Name]
