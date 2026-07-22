@@ -1,0 +1,17 @@
+Hi [Manager Name],
+
+As requested, we reviewed the Target inventory to identify Adobe Analytics events that may have been created for individual activities and could potentially remain unused in Adobe Data Collection/Launch after those activities were deactivated.
+
+Based on the inventory, we identified only a relatively small set of unique Analytics events—approximately 15—being used across nearly 250 Target activities. This indicates that the current reporting implementation is largely based on shared, reusable events rather than activity-specific events. Although a few events have banner-related naming, they also appear to be referenced across multiple activities and may still support active reporting use cases.
+
+Therefore, removing an event solely because one associated activity is no longer active could affect other activities that continue to use the same event. Before removing anything from Launch, we recommend validating each candidate event against:
+
+* active Target activities,
+* Launch rules and data elements,
+* Adobe Analytics reporting usage,
+* and any other page or campaign implementations that may use the event.
+
+Based on the current inventory, we have not yet identified any event that can be confidently classified as unused or safe to remove. We can perform a deeper dependency review for the identified events and prepare a list of genuinely orphaned configurations, if any, before making cleanup changes.
+
+Thanks,
+[Your Name]
