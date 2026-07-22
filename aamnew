@@ -1,0 +1,10 @@
+Hi [Manager Name],
+
+As part of the Audience Manager review, we understand that AAM is currently used primarily for audience qualification and retargeting across multiple advertising and marketing platforms. The existing setup includes data sources, signals, traits, segments, and destination activations that support these use cases.
+
+Since the current initiative is focused on migrating the website implementation to Web SDK, our understanding is that the primary AAM-related responsibility would be to ensure that the required signals and identity information continue to flow correctly through the new Web SDK and datastream configuration. We do not currently expect the existing AAM traits, segments, data sources, or destination mappings to require migration unless there is a separate requirement to redesign, consolidate, or move these audiences to another platform such as RTCDP.
+
+Could you please confirm whether the expectation is limited to validating AAM data continuity as part of the Web SDK migration, or whether we are also expected to review and refine existing audience segments, traits, sources, and destination activations? This will help us define the required level of AAM analysis and implementation effort.
+
+Thanks,
+[Your Name]
