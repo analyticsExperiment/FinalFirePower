@@ -1,0 +1,19 @@
+Hi [Manager Name],
+
+Thank you for clarifying that no direct changes are currently required within the Adobe Target console as part of the Web SDK migration. Since the existing activities, audiences, offers, profile scripts, priority settings, and reporting configurations will remain unchanged, our focus will be on ensuring that the new implementation continues to support those existing Target dependencies correctly.
+
+Based on our understanding, our primary responsibilities will be to:
+
+validate that all required mbox and profile parameters are passed with the correct names and values through the Web SDK implementation,
+confirm that the parameters are available on the appropriate pages and SPA routes at the correct time,
+verify that existing Target activities continue to qualify and render as expected,
+validate impression, interaction, and conversion tracking in Adobe Analytics/A4T,
+identify any gaps caused by changes in the data source, data layer, event timing, or Data Collection rules,
+and support end-to-end QA and post-release monitoring for Target-related functionality.
+
+Although the Target configurations themselves are not being migrated, the activities remain dependent on the data and parameters supplied from the website implementation. Therefore, our role will mainly be to validate that the new Web SDK-based data flow preserves the existing activity qualification, rendering, and reporting behaviour.
+
+Please confirm whether this accurately reflects our expected scope, and let us know if there are any additional Target-related responsibilities or deliverables that should be included in our plan.
+
+Thanks,
+[Your Name]
