@@ -1,0 +1,8 @@
+Hi [Manager Name],
+As part of the current assessment, we are planning to prepare a detailed analytics implementation audit and tagging specification document. The objective is to understand the existing implementation end to end before proceeding with the AppMeasurement-to-AEP Web SDK migration.
+Our approach will involve reviewing key user journeys and events, including page views, clicks and other interactions. For each event, we will validate the Adobe Data Collection rule that fires, the associated data elements, the source of the values from the existing data layer or page, and the corresponding Analytics request. We will also capture relevant request details and screenshots as supporting evidence.
+Based on this analysis, we will create a consolidated tagging specification that documents the tags and events triggered across pages and interactions, along with their current parameter mappings and implementation dependencies.
+The final output will serve as both an implementation audit and a migration reference document. It will help us identify the existing data flow, reusable logic, gaps and dependencies, and provide a structured baseline for designing and validating the future AEP Web SDK implementation.
+Please let us know if there are any additional areas or specific user journeys that should be prioritized as part of this assessment.
+Thanks,
+[Your Name]
