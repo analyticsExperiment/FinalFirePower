@@ -1,8 +1,15 @@
-Hi [Manager Name],
-As part of the current assessment, we are planning to prepare a detailed analytics implementation audit and tagging specification document. The objective is to understand the existing implementation end to end before proceeding with the AppMeasurement-to-AEP Web SDK migration.
-Our approach will involve reviewing key user journeys and events, including page views, clicks and other interactions. For each event, we will validate the Adobe Data Collection rule that fires, the associated data elements, the source of the values from the existing data layer or page, and the corresponding Analytics request. We will also capture relevant request details and screenshots as supporting evidence.
-Based on this analysis, we will create a consolidated tagging specification that documents the tags and events triggered across pages and interactions, along with their current parameter mappings and implementation dependencies.
-The final output will serve as both an implementation audit and a migration reference document. It will help us identify the existing data flow, reusable logic, gaps and dependencies, and provide a structured baseline for designing and validating the future AEP Web SDK implementation.
-Please let us know if there are any additional areas or specific user journeys that should be prioritized as part of this assessment.
+Dear, here is a polished mail that explains the investigation clearly without sounding accusatory.
+Subject: UAT Observation – Unexpected Adobe Launch Property Loading on Offers Page
+Hi Team,
+During our implementation audit of the Offers page in UAT, we observed that Adobe Analytics event80 was firing on page load with a numeric value. As part of the analysis, we reviewed the existing FIS Adobe Data Collection property to identify the corresponding rule, data element and source responsible for populating this event.
+However, event80 was not configured anywhere within the expected FIS property. Initially, we considered whether this could be caused by an outdated or mismatched Launch library version. Further debugging of the page source and script execution showed that two separate Adobe Launch library scripts are loading on the Offers page.
+The additional Launch script appears to belong to a different property and application. A rule from this second property is responsible for setting and firing event80. Therefore, the event is not originating from the intended FIS implementation. Based on the current findings, it appears that this unrelated Launch library may have been included on the Offers page unintentionally.
+This observation was identified in the UAT environment. We have not yet confirmed whether the same additional Launch script is also present in Production. We recommend asking the development team to:
+Validate whether both Launch scripts are expected on the Offers page.
+Check whether the additional property is also loading in Production.
+Remove the unrelated Launch script from the Direct Bank application if it is not an approved dependency.
+Revalidate the page after removal to confirm that event80 is no longer generated and that the intended Analytics implementation continues to work correctly.
+If the same implementation is identified in Production, it should be addressed as a priority, since the additional property could generate unintended Analytics events, duplicate tracking or data being sent to an unrelated reporting configuration.
+We have captured the relevant request details, source references and debugging evidence as part of the audit documentation.
 Thanks,
 [Your Name]
