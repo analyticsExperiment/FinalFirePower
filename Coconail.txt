@@ -1,16 +1,9 @@
+Subject: Follow-up – Launch Properties on D1 Offers Page
 Hi Ryan,
-
-Thank you for the clarification and for sharing the Direct Bank rule configuration for event80.
-
-This helps confirm the source of the event80 value we observed. Just to clarify our original observation, our concern was not with the event80 implementation within the Direct Bank property itself.
-
-While auditing the Offers page, we initially reviewed the expected Launch property and could not find any configuration for event80. During further debugging, we identified that an additional Launch library associated with the Direct Bank property was also being executed on the page. The event80 request we observed was originating from this additional property, which explains why it was not available in the property we were initially reviewing.
-
-Could you please confirm whether loading the **Direct Bank Launch property alongside the existing Launch implementation on the D1 Offers page is the intended architecture**?
-
-If this is expected behaviour, we will document the additional Launch property and event80 as an existing dependency of the Offers page rather than treating it as an implementation issue.
-
-We will also revalidate in a clean browser session to rule out any cache/environment-switching impact as suggested.
-
-Thanks,  
+Thank you again for the earlier clarification. We performed some additional analysis on the D1 Offers page and identified further context around the two Adobe Launch libraries we observed.
+We found that the Offers functionality is being loaded within an iframe, and the additional Direct Bank Launch library is being initialized within that iframe. This explains why two Launch libraries are visible when reviewing the overall Offers page and also confirms the source of the event80 implementation we observed earlier.
+One point we would like to clarify is that, based on our observation, both the parent page and the iframe are hosted under the same CIT domain/subdomain structure. Since they are within the same domain environment, we initially expected that the iframe might also use the same Adobe Data Collection property as the parent application.
+Could you please confirm whether there is a specific architectural or business reason for maintaining a separate Direct Bank Launch property for the iframe, despite both the parent application and iframe being hosted within the same domain/subdomain? For example, is the iframe considered a separately managed application with its own implementation requirements, release lifecycle, Analytics configuration, or ownership?
+There is no concern with having a separate Launch property if this is the intended architecture. We would just like to understand and document the reason for the separation correctly as part of the current implementation audit and Web SDK migration assessment.
+Thanks,
 [Name]
