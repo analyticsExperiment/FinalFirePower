@@ -1,15 +1,16 @@
-Dear, here is a polished mail that explains the investigation clearly without sounding accusatory.
-Subject: UAT Observation – Unexpected Adobe Launch Property Loading on Offers Page
-Hi Team,
-During our implementation audit of the Offers page in UAT, we observed that Adobe Analytics event80 was firing on page load with a numeric value. As part of the analysis, we reviewed the existing FIS Adobe Data Collection property to identify the corresponding rule, data element and source responsible for populating this event.
-However, event80 was not configured anywhere within the expected FIS property. Initially, we considered whether this could be caused by an outdated or mismatched Launch library version. Further debugging of the page source and script execution showed that two separate Adobe Launch library scripts are loading on the Offers page.
-The additional Launch script appears to belong to a different property and application. A rule from this second property is responsible for setting and firing event80. Therefore, the event is not originating from the intended FIS implementation. Based on the current findings, it appears that this unrelated Launch library may have been included on the Offers page unintentionally.
-This observation was identified in the UAT environment. We have not yet confirmed whether the same additional Launch script is also present in Production. We recommend asking the development team to:
-Validate whether both Launch scripts are expected on the Offers page.
-Check whether the additional property is also loading in Production.
-Remove the unrelated Launch script from the Direct Bank application if it is not an approved dependency.
-Revalidate the page after removal to confirm that event80 is no longer generated and that the intended Analytics implementation continues to work correctly.
-If the same implementation is identified in Production, it should be addressed as a priority, since the additional property could generate unintended Analytics events, duplicate tracking or data being sent to an unrelated reporting configuration.
-We have captured the relevant request details, source references and debugging evidence as part of the audit documentation.
-Thanks,
-[Your Name]
+Hi Ryan,
+
+Thank you for the clarification and for sharing the Direct Bank rule configuration for event80.
+
+This helps confirm the source of the event80 value we observed. Just to clarify our original observation, our concern was not with the event80 implementation within the Direct Bank property itself.
+
+While auditing the Offers page, we initially reviewed the expected Launch property and could not find any configuration for event80. During further debugging, we identified that an additional Launch library associated with the Direct Bank property was also being executed on the page. The event80 request we observed was originating from this additional property, which explains why it was not available in the property we were initially reviewing.
+
+Could you please confirm whether loading the **Direct Bank Launch property alongside the existing Launch implementation on the D1 Offers page is the intended architecture**?
+
+If this is expected behaviour, we will document the additional Launch property and event80 as an existing dependency of the Offers page rather than treating it as an implementation issue.
+
+We will also revalidate in a clean browser session to rule out any cache/environment-switching impact as suggested.
+
+Thanks,  
+[Name]
