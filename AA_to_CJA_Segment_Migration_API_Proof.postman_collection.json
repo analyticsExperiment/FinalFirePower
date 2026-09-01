@@ -1,0 +1,731 @@
+{
+  "info": {
+    "_postman_id": "8c0ef9a0-2861-47d2-b76c-1d18d27ff5d9",
+    "name": "AA to CJA Segment Migration - API Proof",
+    "description": "Evidence package for the completed Adobe Analytics to Customer Journey Analytics segment migration POC.\n\nRun 00 Authentication first, followed by the read-only folders in order. The collection shows the Adobe Analytics inventory, source segment and project, completed Adobe migration summary, CJA readback, copied-segment readback, and sharing verification.\n\nThe migration POST is retained only as a protected reference. It is blocked unless run_migration is deliberately changed to true for a separately approved migration.\n\nNo client secret or access token is stored in this export. Adobe component IDs are included as POC evidence.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const required = [\"client_id\", \"org_id\"];",
+          "const missing = required.filter((key) => !pm.variables.get(key));",
+          "if (!pm.request.url.toString().includes(\"adobelogin.com\") && missing.length) {",
+          "  throw new Error(`Missing environment values: ${missing.join(\", \")}`);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "adobe_token_url",
+      "value": "https://ims-na1.adobelogin.com/ims/token/v3",
+      "type": "string"
+    },
+    {
+      "key": "aa_base_url",
+      "value": "https://analytics.adobe.io",
+      "type": "string"
+    },
+    {
+      "key": "cja_base_url",
+      "value": "https://cja.adobe.io",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_secret",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "org_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "scopes",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "global_company_id",
+      "value": "eclerx3",
+      "type": "string"
+    },
+    {
+      "key": "aa_source_rsid",
+      "value": "ngeo1xxpssincid7616",
+      "type": "string"
+    },
+    {
+      "key": "aa_project_id",
+      "value": "60a812a0992e616a7c7c3c6e",
+      "type": "string"
+    },
+    {
+      "key": "aa_segment_id",
+      "value": "s200002371_60acbaa25697f33f456970ae",
+      "type": "string"
+    },
+    {
+      "key": "cja_data_view_id",
+      "value": "dv_6a606628fbd1e8555b276b11",
+      "type": "string"
+    },
+    {
+      "key": "cja_migrated_project_id",
+      "value": "6a96bd8c510564690d279f6f",
+      "type": "string"
+    },
+    {
+      "key": "cja_migrated_segment_id",
+      "value": "s44D0731D5B4714A70A495E2E@AdobeOrg_6a96bd7c6ea6b1625d90276a",
+      "type": "string"
+    },
+    {
+      "key": "cja_shared_copy_segment_id",
+      "value": "s44D0731D5B4714A70A495E2E@AdobeOrg_6a96c31c18a68a6fdcb8e8d1",
+      "type": "string"
+    },
+    {
+      "key": "expected_migration_id",
+      "value": "13b3352f-4e7e-425f-a9c7-cef10e2e5c3c",
+      "type": "string"
+    },
+    {
+      "key": "migration_owner_ims_user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "migration_owner_name",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "run_migration",
+      "value": "false",
+      "type": "string"
+    },
+    {
+      "key": "aa_total_segments",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cja_total_segments",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "migration_status",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "migrated_segment_count",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "copy_share_count",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Authentication",
+      "description": "Generate a fresh Adobe OAuth Server-to-Server token. The token is stored only in the active Postman collection variable for this session.",
+      "item": [
+        {
+          "name": "00 - Generate Server-to-Server Access Token",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{client_secret}}",
+                  "type": "text"
+                },
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{scopes}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{adobe_token_url}}",
+            "description": "Uses the existing Adobe Developer Console OAuth Server-to-Server credential. Keep the client secret only in a local Postman environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Token request succeeded\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Access token returned\", () => pm.expect(json.access_token).to.be.a(\"string\").and.not.empty);",
+                  "pm.environment.set(\"access_token\", json.access_token);",
+                  "pm.collectionVariables.set(\"access_token\", json.access_token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - Adobe Analytics Source Evidence",
+      "description": "Read-only proof of the Adobe Analytics inventory and the exact source segment/project selected for migration.",
+      "item": [
+        {
+          "name": "01 - AA Segment Inventory and Total Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{aa_base_url}}/api/{{global_company_id}}/segments?page=0&limit=100&includeType=all&filterByPublishedSegments=all&expansion=reportSuiteName,ownerFullName,modified,compatibility",
+            "description": "Returns the first page and the tenant-visible total segment count. This can be higher than the number visible in the current UI because API and UI visibility depend on access, owner and report-suite filters."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"AA inventory returned\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"aa_total_segments\", String(json.totalElements ?? (json.content || []).length));",
+                  "console.log(\"AA visible segment count:\", pm.collectionVariables.get(\"aa_total_segments\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 - Source Segment Definition",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{aa_base_url}}/api/{{global_company_id}}/segments/{{aa_segment_id}}?expansion=reportSuiteName,ownerFullName,modified,compatibility,definition",
+            "description": "Reads the exact Adobe Analytics segment used in this POC: Last 14 days."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Source segment returned\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Expected source segment\", () => pm.expect(json.id).to.eql(pm.variables.get(\"aa_segment_id\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 - Source Project and Dependencies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{aa_base_url}}/api/{{global_company_id}}/projects/{{aa_project_id}}?expansion=reportSuiteName,ownerFullName,modified,externalReferences,definition",
+            "description": "Reads the Adobe Analytics carrier project and its referenced components before migration."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Source project returned\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Expected source project\", () => pm.expect(json.id).to.eql(pm.variables.get(\"aa_project_id\")));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Adobe Component Migration Proof",
+      "description": "Shows the completed migration status. The submit request is locked and is present only to document the API payload used.",
+      "item": [
+        {
+          "name": "01 - Completed Migration Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{aa_base_url}}/api/{{global_company_id}}/cjamigration/projects/{{aa_project_id}}/summary",
+            "description": "Official Adobe Component Migration summary for the completed POC migration."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Migration summary returned\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"migration_status\", String(json.migrationStatus || \"\"));",
+                  "pm.collectionVariables.set(\"migrated_segment_count\", String(json.result?.mapped?.segments?.length || 0));",
+                  "pm.test(\"Migration is completed\", () => pm.expect(json.migrationStatus).to.eql(\"COMPLETED\"));",
+                  "pm.test(\"Migrated CJA project matches\", () => pm.expect(json.cjaId).to.eql(pm.variables.get(\"cja_migrated_project_id\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 - DO NOT RUN - Migration Submit (Protected Reference)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"aaId\": \"{{aa_project_id}}\",\n  \"globalCompanyId\": \"{{global_company_id}}\",\n  \"imsOrgId\": \"{{org_id}}\",\n  \"imsUserId\": \"{{migration_owner_ims_user_id}}\",\n  \"imsUserName\": \"{{migration_owner_name}}\",\n  \"rsidDataIdMap\": {\n    \"{{aa_source_rsid}}\": \"{{cja_data_view_id}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{aa_base_url}}/api/{{global_company_id}}/cjamigration/projects",
+            "description": "Protected reference only. This POC migration is already complete. Do not run it again. For a separately approved new migration, update every ID, complete preflight validation and deliberately set run_migration=true."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get(\"run_migration\") !== \"true\") {",
+                  "  throw new Error(\"Safety stop: the POC migration is already complete. Keep run_migration=false.\");",
+                  "}",
+                  "if (!pm.variables.get(\"migration_owner_ims_user_id\") || !pm.variables.get(\"migration_owner_name\")) {",
+                  "  throw new Error(\"Migration owner values are required for an approved new migration.\");",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - CJA Result Evidence",
+      "description": "Read-only verification of the target Data View, migrated project, migrated segment and API-owned shared copy.",
+      "item": [
+        {
+          "name": "01 - Target Data View",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{cja_base_url}}/data/dataviews/{{cja_data_view_id}}?expansion=name,description,timezoneDesignator,parentDataGroupId",
+            "description": "Reads the approved CJA target Data View: CJA - MCP Analysis - SD."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Target Data View returned\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 - Migrated CJA Project",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{cja_base_url}}/projects/{{cja_migrated_project_id}}?expansion=definition,externalReferences,ownerFullName,shares",
+            "description": "Reads the CJA project created by Adobe Component Migration."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Migrated project returned\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Expected migrated project\", () => pm.expect(json.id).to.eql(pm.variables.get(\"cja_migrated_project_id\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 - Original Migrated Segment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{cja_base_url}}/segments/{{cja_migrated_segment_id}}?expansion=ownerFullName,modified,tags,compatibility,definition",
+            "description": "Reads the Last 14 days segment created by Adobe Component Migration. This source-owned migrated component was not changed."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Original migrated segment returned\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Expected migrated segment\", () => pm.expect(json.id).to.eql(pm.variables.get(\"cja_migrated_segment_id\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 - Shared API-Owned Segment Copy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{cja_base_url}}/segments/{{cja_shared_copy_segment_id}}?expansion=ownerFullName,modified,tags,compatibility,definition",
+            "description": "Reads the API-owned copy that was validated against the target Data View and shared with the verified Akka user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Shared copy returned\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Expected copied segment\", () => pm.expect(json.id).to.eql(pm.variables.get(\"cja_shared_copy_segment_id\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 - CJA Segment Inventory and Total Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{cja_base_url}}/segments?page=0&limit=100&includeType=all&rsids={{cja_data_view_id}}&expansion=ownerFullName,modified,tags,compatibility",
+            "description": "Returns the API-visible CJA segment count for the target Data View. UI visibility can be lower when components are not owned by or shared with the signed-in user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CJA inventory returned\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set(\"cja_total_segments\", String(json.totalElements ?? (json.content || []).length));",
+                  "console.log(\"CJA API-visible segment count:\", pm.collectionVariables.get(\"cja_total_segments\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Segment Sharing Proof",
+      "description": "Read-only verification that the API-owned copy is shared to one user and is not shared to all.",
+      "item": [
+        {
+          "name": "01 - Verify Copied Segment Share",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{client_id}}",
+                "type": "text"
+              },
+              {
+                "key": "x-gw-ims-org-id",
+                "value": "{{org_id}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"componentType\": \"segment\",\n  \"componentIds\": [\n    \"{{cja_shared_copy_segment_id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{cja_base_url}}/componentmetadata/shares/component/search?page=0&limit=100",
+            "description": "Searches sharing metadata for only the copied segment. This is a read-only search even though Adobe exposes it as POST."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Share search returned\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const records = Array.isArray(json) ? json : (json.content || []);",
+                  "const record = records.find((item) => item.componentId === pm.variables.get(\"cja_shared_copy_segment_id\"));",
+                  "const shares = record?.shares || [];",
+                  "pm.collectionVariables.set(\"copy_share_count\", String(shares.length));",
+                  "pm.test(\"Copied segment has a user share\", () => pm.expect(shares.some((share) => share.shareToType === \"user\")).to.be.true);",
+                  "pm.test(\"Copied segment is not shared to all\", () => pm.expect(shares.some((share) => share.shareToType === \"all\")).to.be.false);",
+                  "pm.visualizer.set(`",
+                  "<style>body{font-family:Arial,sans-serif;color:#222;padding:18px}h1{font-size:22px;margin:0 0 16px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{border:1px solid #ddd;border-radius:8px;padding:14px}.value{font-size:24px;font-weight:700;margin-top:6px}.ok{color:#18794e}.note{margin-top:18px;font-size:13px;color:#555}</style>",
+                  "<h1>AA to CJA Segment Migration - Evidence Summary</h1>",
+                  "<div class=\"grid\">",
+                  "<div class=\"card\">AA API-visible segments<div class=\"value\">{{aaTotal}}</div></div>",
+                  "<div class=\"card\">CJA API-visible segments<div class=\"value\">{{cjaTotal}}</div></div>",
+                  "<div class=\"card\">Migration status<div class=\"value ok\">{{status}}</div></div>",
+                  "<div class=\"card\">Segments mapped in project<div class=\"value\">{{mappedSegments}}</div></div>",
+                  "<div class=\"card\">Copied segment shares<div class=\"value\">{{shareCount}}</div></div>",
+                  "<div class=\"card\">Copy shared to all<div class=\"value ok\">No</div></div>",
+                  "</div>",
+                  "<div class=\"note\">Counts reflect the permissions of the OAuth technical account. UI visibility depends on ownership and sharing.</div>",
+                  "` , {",
+                  "  aaTotal: pm.collectionVariables.get(\"aa_total_segments\") || \"Run folder 01\",",
+                  "  cjaTotal: pm.collectionVariables.get(\"cja_total_segments\") || \"Run request 03.05\",",
+                  "  status: pm.collectionVariables.get(\"migration_status\") || \"Run request 02.01\",",
+                  "  mappedSegments: pm.collectionVariables.get(\"migrated_segment_count\") || \"Run request 02.01\",",
+                  "  shareCount: String(shares.length),",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
