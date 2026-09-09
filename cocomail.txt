@@ -1,0 +1,30 @@
+Hi [Manager Name],
+We completed an initial review of the Application ID (eVar16) implementation to understand why the value is not being populated consistently across some Analytics hits.
+As a first step, we traced the eVar16 configuration within Adobe Data Collection and identified that it is referenced across a large number of rules (approximately 140 references). The implementation primarily relies on two data elements that retrieve analyticsID from the digitalData array: Data Layer | Analytics ID and Application Analytics ID.
+During the review, we identified the following initial observations:
+1. Application ID is not available in the data layer during the initial landing-page execution
+On the OAO landing page in UAT, we observed that digitalData is available, but at the time the initial page-load rules execute, the array does not yet contain an analyticsID entry. As a result, the Data Layer | Analytics ID data element evaluates to undefined.
+The data element searches the existing digitalData entries for an analyticsID value and returns the most recently pushed value. Therefore, until the application or another upstream process pushes analyticsID into the data layer, eVar16 cannot be populated by rules relying on this data element.
+Once an analyticsID entry becomes available later in the journey, subsequent rules using this data element appear capable of retrieving and passing the Application ID as expected.
+2. Difference identified between the two Application ID data elements
+We also identified an important difference in the way the two commonly used data elements handle analyticsID.
+The Data Layer | Analytics ID data element checks the type of the retrieved value:
+- If analyticsID is already a string, it returns the string.
+- If analyticsID is an object, it extracts and returns analyticsID.id.
+This ensures that a string value is ultimately supplied to Adobe Analytics.
+The Application Analytics ID data element, however, retrieves the latest analyticsID entry and returns it directly without checking whether it is a string or an object.
+Therefore, when analyticsID is supplied in an object format, this data element can potentially return the complete JavaScript object instead of the actual ID value.
+3. [object Object] values identified in Adobe Analytics
+As part of the validation, we reviewed the App ID (eVar16) report in Adobe Analytics and found a significant number of instances where the captured value is:
+[object Object]
+For the reviewed reporting period, approximately 26K instances were observed, with the example shown being associated with the /applicationstarted page.
+This behaviour is consistent with the implementation identified in the Application Analytics ID data element. If an analyticsID object is returned directly and assigned to eVar16, JavaScript converts the object to its string representation, resulting in [object Object] being transmitted instead of the actual Application ID.
+Current Understanding
+Based on the initial analysis, there appear to be two separate scenarios contributing to the eVar16 inconsistency:
+1. Missing Application ID on earlier hits – analyticsID has not yet been pushed into digitalData when the corresponding Launch rule executes, causing the data element to return undefined.
+2. Invalid [object Object] value on some hits – rules using the Application Analytics ID data element may receive the complete analyticsID object rather than extracting its ID property.
+Once a valid analyticsID has been pushed into the data layer, the subsequent implementation using the correctly normalized data element appears to populate eVar16 as expected.
+We are continuing the analysis across the application journey to identify which rules use each data element, when the first analyticsID push occurs, and whether there are any additional timing or mapping differences contributing to the behaviour.
+We have attached the supporting screenshots from the UAT data layer, both data-element configurations, and the Adobe Analytics report for reference.
+Thanks,
+[Your Name]
