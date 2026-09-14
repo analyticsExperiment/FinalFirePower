@@ -1,0 +1,25 @@
+15/09, 02:29] Rajavel T: Hi [Manager Name],
+Thank you for confirming the observations around the Application ID persistence and the [object Object] values currently reported against eVar16.
+During the additional review, we observed that when the Application ID becomes available and is pushed into the data layer, the same Application ID is also being persisted in localStorage. Based on this, we were considering whether the existing eVar16 retrieval approach could be simplified and made more reliable.
+Currently, some of the data elements search through the digitalData history to identify the most recent analyticsID. As discussed, relying only on reverse iteration of the data layer may not always be reliable, particularly when the Application ID is not present in every event or has not yet been pushed at the time an Analytics rule executes.
+One possible approach would be to create a single standardized Application ID data element with the following logic:
+Retrieve the latest valid Application ID from the current data-layer/state where available.
+If the Application ID is unavailable there, use the persisted Application ID from localStorage as a fallback.
+Normalize the returned value so that, whether analyticsID is supplied as a string or an object, the data element always returns only the actual Application ID as a string.
+Using the current data-layer value first would help ensure that the most recent Application ID is used, while localStorage could provide persistence for subsequent events where the ID is no longer explicitly available in the data layer.
+This could also address the [object Object] issue we identified. Instead of maintaining multiple Application ID data elements with slightly different return logic, all eVar16 mappings could eventually reference the same standardized data element, ensuring that an object is never passed directly into Adobe Analytics.
+Conceptually, the flow would be:
+Current Application ID → LocalStorage fallback → Normalize value → eVar16
+This should provide a more consistent Application ID across the journey and remove the difference in behaviour between the existing data elements.
+Could you please confirm whether there is already a planned approach for standardizing the Application ID retrieval/persistence logic, or whether we should evaluate this option further as part of the implementation review?
+Thanks,
+[Name]
+[15/09, 02:35] Rajavel T: Hi [Manager Name],
+We reviewed the Adobe Analytics tracking for the Guided Investing banner on the homepage.
+The impression tracking appears to be working as expected. However, on banner interaction/click, although the D1 Tracking – Adobe Analytics tag is firing, we are currently unable to identify any specific configuration within the Launch rule/custom code that maps the interaction to event171 or to any Guided Investing-specific variables.
+In Adobe Analytics reporting, event171 is configured as “Guided Investing Interaction”, but we could not find the corresponding event171 mapping in the Launch implementation. We also do not currently see any feature-specific eVar/variable being populated that would allow the Guided Investing interaction to be clearly identified in reporting.
+Could you please confirm whether event171 should be configured within the existing D1 Tracking rule for the Guided Investing banner interaction?
+Alternatively, please let us know if there is an existing tracking approach we should use, or if a separate event/variable needs to be implemented specifically for Guided Investing interactions.
+Once confirmed, we can validate the implementation and reporting accordingly.
+Thanks,
+[Your Name]
