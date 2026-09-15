@@ -1,0 +1,58 @@
+Mail 1
+
+Hi [Manager Name],
+Thank you for the prompt response and clarification.
+Yes, that aligns with what we are observing as well. Since the application
+is SPA-based, the data layer state may not always remain consistent across
+the complete user journey. In some cases, values can be overwritten, not
+refreshed at the expected point, or may not be available when a downstream
+Analytics rule executes.
+We agree that rather than addressing this only at the individual rule or
+data-element level, a more detailed review of the overall data-layer
+behaviour and Application ID lifecycle would be the better approach. This
+will help us understand where the value is initially created, how it is
+persisted, when it is updated during route/application changes, and how it
+should be consumed consistently by Analytics.
+Thanks for your guidance.
+
+Thanks,
+Vamsi
+
+
+Mail 2
+
+Hi [Name],
+We performed some additional validation of the Guided Investing banner
+tracking and noticed that there are currently two Analytics implementation
+paths associated with this experience.
+For the Web SDK implementation, the impression and banner interaction
+tracking is being sent through the datastream to a separate Adobe Analytics
+report suite. We validated the reporting in this report suite and are able
+to see meaningful impression data as well as Guided Investing interaction
+data.
+However, when we try to validate the same metrics with the corresponding
+Target/A4T activity attribution, we are not seeing the expected data.
+On further review, we noticed that the report suite configured as the
+reporting source for the Target activity is the report suite used by the
+legacy Analytics implementation, rather than the report suite receiving the
+Web SDK data. This may explain why the Web SDK impression/interaction
+metrics are available in Analytics but are not being associated with the
+Target activity through A4T.
+At the same time, within the legacy Analytics implementation, the banner
+interaction rule/tag is firing, but we could not identify the expected
+Guided Investing interaction event configuration within the rule. For
+example, although the Guided Investing interaction event is available in
+Analytics reporting, the corresponding event mapping does not appear to be
+configured in the existing interaction rule.
+Since the legacy report suite is currently being used as the A4T reporting
+source, could you please confirm the intended tracking approach?
+Should we:
+configure the required Guided Investing interaction event(s) within the
+existing legacy Analytics rule so that the interaction is captured
+correctly in the report suite currently used for A4T, or
+use the Web SDK implementation/report suite as the intended reporting path
+and align the A4T configuration accordingly?
+Once the intended approach is confirmed, we can validate the impression,
+interaction, and Target activity attribution end-to-end.
+Thanks,
+[Your Name]
