@@ -1,0 +1,9 @@
+Subject: OAO Scenario and Measurement Mapping – Clarification Required
+Hi [Manager Name],
+Thank you for preparing the OAO scenario and measurement mapping. I reviewed both sheets and now have a better understanding of the different customer journeys, product scenarios, decision outcomes, and the key business events that need to be measured across the application.
+Since this is a single-page application, I am preparing a more granular tracking sheet by breaking each scenario into individual screen views and user interactions such as Continue, Save & Continue, Back, Save & Exit, selections, and other CTAs. The intention is to document each step clearly so that it can later be used for implementation and QA validation.
+The scenario mapping gives a clear view of the customer journey, while the measurement mapping provides the high-level events and key data elements. I would need some clarification to connect these two together, mainly around which event should fire at each exact screen or interaction, which parameters should be passed at that point, the expected naming/value convention, and the source from where each value should be populated.
+Once I have this clarity, I can complete the detailed mapping across all scenarios in a consistent manner and use it as the tagging specification for the Web SDK implementation and validation.
+Please let me know a suitable time to walk through the event and parameter mapping.
+Thanks,
+[Name]
