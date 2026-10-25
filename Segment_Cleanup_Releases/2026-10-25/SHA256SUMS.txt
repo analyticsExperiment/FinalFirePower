@@ -1,0 +1,2 @@
+cf7a622db248fcfa1abac81c6977fa151a6e4bbeb99dd2c2d7a7592bdf700ccf  CJA_AA_Segment_Cleanup_V3_2026-10-25.zip
+2701629f2c6c81de32858a45e8e6f77c854e3bb8ca8a083f862beaf6c2183b0f  Adobe_Analytics_Segment_Cleanup_Standalone_2026-10-25.zip
